@@ -1,0 +1,41 @@
+<project name="MAVBase" basedir=".">
+
+	<property name="lib.dir" value="lib" />
+	<property name="dis.dir" value="dis" />
+	<property name="res.dir" value="resources" />
+	<property name="build.dir" value="bin" />
+	<property name="deploy.dir" value="/Users/ecmnet/PixHawk/java/MAVGCL/MAVGCL/lib" />
+
+	<target name="clean">
+			<mkdir dir="dis" />
+			<mkdir dir="bin" />
+	</target>
+
+	<target name="compile_mavbase" depends="clean">
+	<javac destdir="bin" includeantruntime="false">
+		<src path="src" />
+		<classpath>
+			<fileset dir="lib">
+				<include name="*.jar" />
+			</fileset>
+		</classpath>
+	</javac>
+	</target>
+
+	<target name="build_mavbase"  depends="compile_mavbase">
+			<!--	 <mkdir dir="${dis.dir}"/> -->
+			<jar destfile="${dis.dir}/mavb.jar" basedir="${build.dir}">
+				<manifest>
+			<!--		<attribute name="Main-Class" value="com.comino.msp.main.StartUp" /> -->
+					<attribute name="Main-Class" value="com.comino.mavbase.main.StartUp" />
+					<attribute name="Built-By" value="${user.name}" />
+
+					<attribute name="Class-Path" value="jssc.jar
+						                                mavcomm.jar
+     					                                resources/"
+					/>
+				</manifest>
+			</jar>
+		</target>
+
+</project>
