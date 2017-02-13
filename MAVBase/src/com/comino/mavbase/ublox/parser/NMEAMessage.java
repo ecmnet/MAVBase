@@ -1,6 +1,6 @@
 package com.comino.mavbase.ublox.parser;
 
-public class NMEAMessages {
+public class NMEAMessage {
 
 	public static final int HEAD1 = 0x24;
 	public static final int HEAD2 = 0x47;
@@ -12,6 +12,7 @@ public class NMEAMessages {
 	public double  longitude;
 	public double  altitude;
 	public double  geoidHeight;
+	public double  dilution;
 	public String  time;
 	public int     sats;
 	public int     fix;
@@ -20,7 +21,7 @@ public class NMEAMessages {
 	public boolean doGGA(String[] words)
 	{
 		// words won't be null, but it could be the wrong length
-		if (words.length < 7)
+		if (words.length < 8)
 			return false;
 
 		this.time = words[1];
@@ -28,6 +29,7 @@ public class NMEAMessages {
 		this.longitude = this.parseLongitude(words[4], words[5]);
 		this.fix = Integer.parseInt(words[6]);
 		this.sats = Integer.parseInt(words[7]);
+		this.dilution = Double.parseDouble(words[8]);
 		if (words.length >= 11)
 			this.altitude = this.parseElevation(words[9], words[10]);
 		if (words.length >= 13)
@@ -83,8 +85,8 @@ public class NMEAMessages {
 
 	public String toString()
 	{
-		return String.format("(%10.8f\u00B0, %11.8f\u00B0, %10.4g m, %10.4g m, %s, %d, %d)", this.latitude, this.longitude,
-				this.altitude, this.geoidHeight, this.time, this.sats, this.fix);
+		return String.format("(%10.8f\u00B0, %11.8f\u00B0, %10.4g m, %10.4g m, %s, %d, %d, %3.2f)", this.latitude, this.longitude,
+				this.altitude, this.geoidHeight, this.time, this.sats, this.fix, this.dilution);
 	}
 
 }

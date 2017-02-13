@@ -31,8 +31,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
-import com.comino.mavbase.ublox.parser.NMEAMessages;
+import com.comino.mavbase.ublox.parser.NMEAMessage;
+import com.comino.mavbase.ublox.parser.RTCMMessage;
 import com.comino.mavbase.ublox.parser.UBXException;
+import com.comino.mavbase.ublox.parser.UBXMessage;
 import com.comino.mavbase.ublox.parser.UBXMessageType;
 import com.comino.mavbase.ublox.parser.UBXMsgConfiguration;
 import com.comino.mavbase.ublox.util.InputStreamCounter;
@@ -45,23 +47,29 @@ import com.comino.mavbase.ublox.util.InputStreamCounter;
  * @author Lorenzo Patocchi cryms.com, Eugenio Realini
  */
 
-public class UBXSerialReader implements Runnable,StreamEventProducer {
+public class UBXSerialReader implements Runnable {
+
+	private final static int STATE_NONE = -1;
+	private final static int STATE_NMEA =  0;
+	private final static int STATE_UBX  =  1;
+	private final static int STATE_RCTM =  2;
+
+	private int state =STATE_NONE;
 
 	private InputStreamCounter in;
 	private OutputStream out;
 	private Thread t = null;
 	private boolean stop = false;
 	private Vector<StreamEventListener> streamEventListeners = new Vector<StreamEventListener>();
-	private UBXReader reader;
+
 	private String COMPort;
 	private int measRate = 1;
 	private boolean sysTimeLogEnabled = false;
 	private List<String> requestedNmeaMsgs = null;
 	private String dateFile;
 	private String outputDir = null;
-	private int msgAidEphRate = 0; //seconds
-	private int msgAidHuiRate = 0; //seconds
-	private boolean debugModeEnabled = false;
+
+	private boolean debugModeEnabled = true;
 
 	public UBXSerialReader(InputStream in,OutputStream out, String COMPort, String outputDir) {
 		this(in,out,COMPort,outputDir,null);
@@ -92,7 +100,7 @@ public class UBXSerialReader implements Runnable,StreamEventProducer {
 		}
 		this.in = new InputStreamCounter(in,fos_ubx);
 		this.out = out;
-		this.reader = new UBXReader(this.in,streamEventListener);
+
 	}
 
 	public void start()  throws IOException{
@@ -144,7 +152,12 @@ public class UBXSerialReader implements Runnable,StreamEventProducer {
 			out.flush();
 		}
 
-		System.out.println(date1+" - "+COMPort+" - RXM-RAW messages enabled");
+		//		System.out.println(date1+" - "+COMPort+" - RXM-RAW messages enabled");
+		//		UBXMsgConfiguration msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_RXM, UBXMessageType.RXM_RAW, true);
+		//		out.write(msgcfg.getByte());
+		//		out.flush();
+
+		System.out.println(date1+" - "+COMPort+" - R messages enabled");
 		UBXMsgConfiguration msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_RXM, UBXMessageType.RXM_RAW, true);
 		out.write(msgcfg.getByte());
 		out.flush();
@@ -166,138 +179,88 @@ public class UBXSerialReader implements Runnable,StreamEventProducer {
 	public void run() {
 
 		int data = 0;
-		long aidEphTS = System.currentTimeMillis();
-		long aidHuiTS = System.currentTimeMillis();
-		//long sysOutTS = System.currentTimeMillis();
 		UBXMsgConfiguration msgcfg = null;
-		FileOutputStream fos_tim = null;
-		FileOutputStream fos_nmea = null;
-		PrintStream psSystime = null;
-		PrintStream psNmea = null;
 
-		NMEAMessages nmea = new NMEAMessages();
+		NMEAMessage nmea = new NMEAMessage();
+
+		byte[] buffer = new byte[500];
 
 		Date date = new Date();
 		SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		String date1 = sdf1.format(date);
 		String COMPortStr = prepareCOMStringForFilename(COMPort);
 
-		if (sysTimeLogEnabled && outputDir!=null) {
-			System.out.println(date1+" - "+COMPort+" - System time logging enabled");
-			try {
-				System.out.println(date1+" - "+COMPort+" - Logging system time in "+outputDir+"/"+COMPortStr+ "_" + dateFile + "_systime.txt");
-				fos_tim = new FileOutputStream(outputDir+"/"+COMPortStr+ "_" + dateFile + "_systime.txt");
-				psSystime = new PrintStream(fos_tim);
-				psSystime.println("GPS time                      System time");
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		} else {
-			System.out.println(date1+" - "+COMPort+" - System time logging disabled");
-		}
-
-		if (!requestedNmeaMsgs.isEmpty() && outputDir!=null) {
-			try {
-				System.out.println(date1+" - "+COMPort+" - Logging NMEA sentences in "+outputDir+"/"+COMPortStr+ "_" + dateFile + "_NMEA.txt");
-				fos_nmea = new FileOutputStream(outputDir+"/"+COMPortStr+ "_" + dateFile + "_NMEA.txt");
-				psNmea = new PrintStream(fos_nmea);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
-
 		try {
-			int msg[] = {};
-			if (msgAidHuiRate > 0) {
-				System.out.println(date1+" - "+COMPort+" - AID-HUI message polling enabled (rate: "+msgAidHuiRate+"s)");
-				msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_AID, UBXMessageType.AID_HUI, msg);
-				out.write(msgcfg.getByte());
-				out.flush();
-			}
-			if (msgAidEphRate > 0) {
-				System.out.println(date1+" - "+COMPort+" - AID-EPH message polling enabled (rate: "+msgAidEphRate+"s)");
-				msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_AID, UBXMessageType.AID_EPH, msg);
-				out.write(msgcfg.getByte());
-				out.flush();
-			}
+			int cmsg[] = {};
+			//			if (msgAidHuiRate > 0) {
+			//				System.out.println(date1+" - "+COMPort+" - AID-HUI message polling enabled (rate: "+msgAidHuiRate+"s)");
+			//				msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_AID, UBXMessageType.AID_HUI, msg);
+			//				out.write(msgcfg.getByte());
+			//				out.flush();
+			//			}
 
 			in.start();
-			sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-			String dateSys = null;
-			String dateGps = null;
-			boolean rxmRawMsgReceived = false;
-			boolean truncatedNmea = false;
-			reader.enableDebugMode(this.debugModeEnabled);
+
+
 			while (!stop) {
 				if(in.available()>0){
-					dateSys = sdf1.format(new Date());
-					if (!truncatedNmea) {
+					data = in.read();
+					if(data == UBXMessage.HEAD1){
 						data = in.read();
-					}else{
-						truncatedNmea = false;
-					}
-					try{
-						if(data == 0xB5){
-							Object o = reader.readMessage();
-							try {
-								//								if(o instanceof Observations){
-								//									if(streamEventListeners!=null && o!=null){
-								//										for(StreamEventListener sel:streamEventListeners){
-								//											Observations co = sel.getCurrentObservations();
-								//										    sel.pointToNextObservations();
-								//
-								//										    rxmRawMsgReceived = true;
-								//
-								//										    if (this.sysTimeLogEnabled) {
-								//										    	dateGps = sdf1.format(new Date(co.getRefTime().getMsec()));
-								//										    	psSystime.println(dateGps +"       "+dateSys);
-								//										    }
-								//										}
-								//									}
-								//								}
-							} catch (NullPointerException e) {
-							}
-						}else if(data == NMEAMessages.HEAD1){
-							if (!requestedNmeaMsgs.isEmpty()) {
-								String sentence = "" + (char) data;
+						if(data == UBXMessage.HEAD2){
+						System.out.print("UBX: ");
+						int clasid = in.read() | in.read() << 8;
+						int len = (in.read() ) | (in.read() << 8);
+						in.read(buffer, 0, len+2);
+
+						System.out.println(len);
+						}
+					}  else if(data == RTCMMessage.RTCM3_PREAMBLE) {
+						int len = ((int)(in.read() & 0x0003) << 8) | (in.read());
+						if(len>300) {
+							for(int i=0;i<len;i++)
+								in.read();
+							continue;
+						}
+
+						System.out.println("RTCM3: "+len);
+						in.read(buffer, 0, len);
+
+						for(StreamEventListener sel:streamEventListeners)
+							sel.getRTCM3(buffer, len);
+
+					} else if(data == NMEAMessage.HEAD1){
+						if (!requestedNmeaMsgs.isEmpty()) {
+							String sentence = "" + (char) data;
+							data = in.read();
+							if(data == NMEAMessage.HEAD2) {
+								System.out.print("NMEA: ");
+								sentence = sentence + (char) data;
 								data = in.read();
-								if(data == NMEAMessages.HEAD2) {
+								sentence = sentence + (char) data;
+								data = in.read();
+								while (data != 0x0A && data != 0xB5) {
 									sentence = sentence + (char) data;
 									data = in.read();
-									sentence = sentence + (char) data;
-									data = in.read();
-									while (data != 0x0A && data != 0xB5) {
-										sentence = sentence + (char) data;
-										data = in.read();
-									}
-									sentence = sentence + (char) data;
-									String[] words = sentence.split("[,*]");
+								}
+								sentence = sentence + (char) data;
+								String[] words = sentence.split("[,*]");
 
-									if(words[0].contains(NMEAMessages.GGA)) {
-										if(nmea.doGGA(words))
-											System.out.println(nmea);
+								if(words[0].contains(NMEAMessage.GGA)) {
+									if(nmea.doGGA(words)) {
+										for(StreamEventListener sel:streamEventListeners)
+											sel.getPosition(nmea.latitude, nmea.longitude, nmea.altitude, nmea.fix, nmea.sats);
 									}
-
-									if(psNmea!=null)
-										psNmea.print(sentence);
-									if (data == 0xB5) {
-										truncatedNmea = true;
-										if (this.debugModeEnabled) {
-											System.out.println("Warning: truncated NMEA message");
-										}
-									}
-
 								}
 							}
-						} else {
-							if (this.debugModeEnabled) {
-								System.out.println("Warning: wrong sync char 1 "+data+" "+Integer.toHexString(data)+" ["+((char)data)+"]");
-							}
 						}
-					}catch(UBXException ubxe){
-						ubxe.printStackTrace();
+					} else {
+						if (this.debugModeEnabled) {
+							System.out.println("Warning: wrong sync char 1 "+data+" "+Integer.toHexString(data)+" ["+((char)data)+"]");
+						}
 					}
-				}else{
+
+				} else{
 					// no bytes to read, wait 1 msec
 					try {
 						Thread.sleep(1);
@@ -305,71 +268,36 @@ public class UBXSerialReader implements Runnable,StreamEventProducer {
 				}
 
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		for(StreamEventListener sel:streamEventListeners){
 			sel.streamClosed();
 		}
-		//if(streamEventListener!=null) streamEventListener.streamClosed();
+
 	}
 
-	//	/**
-	//	 * @return the streamEventListener
-	//	 */
-	//	public StreamEventListener getStreamEventListener() {
-	//		return streamEventListener;
-	//	}
 
-	//	/**
-	//	 * @param streamEventListener the streamEventListener to set
-	//	 */
-	//	public void setStreamEventListener(StreamEventListener streamEventListener) {
-	//		this.streamEventListener = streamEventListener;
-	//		if(this.reader!=null) this.reader.setStreamEventListener(streamEventListener);
-	//	}
-
-	/**
-	 * @return the streamEventListener
-	 */
 	@SuppressWarnings("unchecked")
-	@Override
 	public Vector<StreamEventListener> getStreamEventListeners() {
 		return (Vector<StreamEventListener>)streamEventListeners.clone();
 	}
-	/**
-	 * @param streamEventListener the streamEventListener to set
-	 */
-	@Override
+
 	public void addStreamEventListener(StreamEventListener streamEventListener) {
 		if(streamEventListener==null) return;
 		if(!streamEventListeners.contains(streamEventListener))
 			this.streamEventListeners.add(streamEventListener);
-		if(this.reader!=null)
-			this.reader.addStreamEventListener(streamEventListener);
 	}
-	/* (non-Javadoc)
-	 * @see org.gogpsproject.StreamEventProducer#removeStreamEventListener(org.gogpsproject.StreamEventListener)
-	 */
-	@Override
+
 	public void removeStreamEventListener(
 			StreamEventListener streamEventListener) {
 		if(streamEventListener==null) return;
 		if(streamEventListeners.contains(streamEventListener))
 			this.streamEventListeners.remove(streamEventListener);
-		this.reader.removeStreamEventListener(streamEventListener);
 	}
 
 	public void setRate(int measRate) {
 		this.measRate = measRate;
-	}
-
-	public void enableAidEphMsg(Integer ephRate) {
-		this.msgAidEphRate = ephRate;
-	}
-
-	public void enableAidHuiMsg(Integer ionRate) {
-		this.msgAidHuiRate = ionRate;
 	}
 
 	public void enableSysTimeLog(Boolean enableTim) {
@@ -413,10 +341,9 @@ public class UBXSerialReader implements Runnable,StreamEventProducer {
 
 
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
-	public static String stringToHex(String s) {
-		byte[] bytes = s.getBytes();
-		char[] hexChars = new char[bytes.length * 2];
-		for ( int j = 0; j <bytes.length; j++ ) {
+	public static String byteToHex(byte[] bytes, int len) {
+		char[] hexChars = new char[len * 2];
+		for ( int j = 0; j <len; j++ ) {
 			int v = bytes[j] & 0xFF;
 			hexChars[j * 2] = hexArray[v >>> 4];
 			hexChars[j * 2 + 1] = hexArray[v & 0x0F];

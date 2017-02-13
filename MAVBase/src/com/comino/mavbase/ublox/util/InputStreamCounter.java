@@ -59,7 +59,7 @@ public class InputStreamCounter extends InputStream{
 			counter++;
 		//}
 		if(os!=null && c>=0) os.write(c);
-		return c;
+		return c & 0x0FF;
 	}
 
 	/* (non-Javadoc)

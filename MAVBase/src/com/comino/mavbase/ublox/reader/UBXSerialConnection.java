@@ -49,19 +49,21 @@ public class UBXSerialConnection  {
 	private String portName;
 	private int speed;
 	private int setMeasurementRate = 1;
-	private int setEphemerisRate = 10;
-	private int setIonosphereRate = 60;
 	private boolean enableTimetag = true;
 	private Boolean enableDebug = false;
-	//private Boolean enableRnxObs = true;
 	private List<String> enableNmeaList;
-	private String outputDir = "/Users/ecmnet/test";
+	private String outputDir = null;
 
 	public UBXSerialConnection(String portName, int speed) {
 		this.portName = portName;
 		this.speed = speed;
 		enableNmeaList = new ArrayList<String>();
 		enableNmeaList.add("GGA");
+		try {
+			init();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -111,8 +113,6 @@ public class UBXSerialConnection  {
 
 			ubxReader = new UBXSerialReader(inputStream,outputStream,portName,outputDir);
 			ubxReader.setRate(this.setMeasurementRate);
-			ubxReader.enableAidEphMsg(this.setEphemerisRate);
-			ubxReader.enableAidHuiMsg(this.setIonosphereRate);
 			ubxReader.enableSysTimeLog(this.enableTimetag);
 			ubxReader.enableDebugMode(this.enableDebug);
 			ubxReader.enableNmeaMsg(this.enableNmeaList);
