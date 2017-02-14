@@ -30,8 +30,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
-import com.comino.mavbase.ublox.util.SerialInputStream;
-import com.comino.mavbase.ublox.util.SerialOutputStream;
+import com.comino.mav.comm.serial.stream.SerialInputStream;
+import com.comino.mav.comm.serial.stream.SerialOutputStream;
 
 import jssc.SerialPort;
 import jssc.SerialPortException;
