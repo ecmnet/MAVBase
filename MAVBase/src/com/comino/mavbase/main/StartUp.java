@@ -39,13 +39,12 @@ public class StartUp {
 
 			@Override
 			public void streamClosed() {
-				control.close();
-
+				System.out.println("RTCM3 connection lost");
 			}
 
 			@Override
 			public void getPosition(double lat, double lon, double altitude, int fix, int sats) {
-				System.out.println("Lat: "+lat+" Lon: "+lon+ " Alt: "+altitude+" Sat: "+sats);
+				System.out.println("Base position: Lat: "+lat+" Lon: "+lon+ " Alt: "+altitude+" Sat: "+sats);
 
 			}
 

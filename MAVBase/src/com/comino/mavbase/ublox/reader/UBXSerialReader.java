@@ -218,7 +218,10 @@ public class UBXSerialReader implements Runnable {
 
 						}
 					}  else if(data == RTCMMessage.RTCM3_PREAMBLE) {
-						int len = ((int)(in.read() & 0x0003) << 8) | (in.read());
+						buffer[0] = (byte)(data &0x00FF);
+						buffer[1] = (byte)(in.read() & 0x00FF);
+						buffer[2] = (byte)(in.read() & 0x00FF);
+						int len = ((int)(buffer[1] & 0x0003) << 8) | (buffer[2]);
 						if(len>300 || len == 0) {
 							for(int i=0;i<len;i++)
 								in.read();
@@ -226,10 +229,10 @@ public class UBXSerialReader implements Runnable {
 						}
 
 //						System.out.println("RTCM3: "+len);
-						in.read(buffer, 0, len);
+						in.read(buffer, 3, len);
 
 						for(StreamEventListener sel:streamEventListeners)
-							sel.getRTCM3(buffer, len);
+							sel.getRTCM3(buffer, len+3);
 
 					} else if(data == NMEAMessage.HEAD1){
 						if (!requestedNmeaMsgs.isEmpty()) {
