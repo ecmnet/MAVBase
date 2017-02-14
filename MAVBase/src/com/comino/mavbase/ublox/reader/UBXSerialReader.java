@@ -190,40 +190,42 @@ public class UBXSerialReader implements Runnable {
 		String date1 = sdf1.format(date);
 		String COMPortStr = prepareCOMStringForFilename(COMPort);
 
-		try {
-			int cmsg[] = {};
-			//			if (msgAidHuiRate > 0) {
-			//				System.out.println(date1+" - "+COMPort+" - AID-HUI message polling enabled (rate: "+msgAidHuiRate+"s)");
-			//				msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_AID, UBXMessageType.AID_HUI, msg);
-			//				out.write(msgcfg.getByte());
-			//				out.flush();
-			//			}
+		int cmsg[] = {};
+		//			if (msgAidHuiRate > 0) {
+		//				System.out.println(date1+" - "+COMPort+" - AID-HUI message polling enabled (rate: "+msgAidHuiRate+"s)");
+		//				msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_AID, UBXMessageType.AID_HUI, msg);
+		//				out.write(msgcfg.getByte());
+		//				out.flush();
+		//			}
 
-			in.start();
+		in.start();
 
 
-			while (!stop) {
+		while (!stop) {
+			try {
 				if(in.available()>0){
 					data = in.read();
 					if(data == UBXMessage.HEAD1){
 						data = in.read();
 						if(data == UBXMessage.HEAD2){
-						System.out.print("UBX: ");
-						int clasid = in.read() | in.read() << 8;
-						int len = (in.read() ) | (in.read() << 8);
-						in.read(buffer, 0, len+2);
+							System.out.print("UBX: ");
+							in.read(buffer, 0, 2);
+							int clasid = buffer[0] | buffer[1] << 8;
+							int len = (in.read() ) | (in.read() << 8);
 
-						System.out.println(len);
+//							System.out.println(len+":"+byteToHex(buffer,2));
+							in.read(buffer, 0, len+2);
+
 						}
 					}  else if(data == RTCMMessage.RTCM3_PREAMBLE) {
 						int len = ((int)(in.read() & 0x0003) << 8) | (in.read());
-						if(len>300) {
+						if(len>300 || len == 0) {
 							for(int i=0;i<len;i++)
 								in.read();
 							continue;
 						}
 
-						System.out.println("RTCM3: "+len);
+//						System.out.println("RTCM3: "+len);
 						in.read(buffer, 0, len);
 
 						for(StreamEventListener sel:streamEventListeners)
@@ -266,11 +268,13 @@ public class UBXSerialReader implements Runnable {
 						Thread.sleep(1);
 					} catch (InterruptedException e) {}
 				}
-
+			} catch (Exception e) {
+				// error counter
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+
 		}
+
 		for(StreamEventListener sel:streamEventListeners){
 			sel.streamClosed();
 		}

@@ -110,6 +110,7 @@ public class SerialInputStream extends InputStream {
 			System.arraycopy(readBuf, 0, buf, offset, length);
 			return readBuf.length;
 		} catch (Exception e) {
+			System.err.println(length);
 			throw new IOException(e);
 		}
 	}
