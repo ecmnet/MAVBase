@@ -7,7 +7,9 @@
 	<property name="deploy.dir" value="/Users/ecmnet/PixHawk/java/MAVGCL/MAVGCL/lib" />
 
 	<target name="clean">
+		    <delete dir="dist" />
 			<mkdir dir="dis" />
+		    <delete dir="bin" />
 			<mkdir dir="bin" />
 	</target>
 
@@ -24,7 +26,7 @@
 
 	<target name="build_mavbase"  depends="compile_mavbase">
 			<!--	 <mkdir dir="${dis.dir}"/> -->
-			<jar destfile="${dis.dir}/mavb.jar" basedir="${build.dir}">
+			<jar destfile="${dis.dir}/mavbase.jar" basedir="${build.dir}">
 				<manifest>
 			<!--		<attribute name="Main-Class" value="com.comino.msp.main.StartUp" /> -->
 					<attribute name="Main-Class" value="com.comino.mavbase.main.StartUp" />
@@ -37,5 +39,11 @@
 				</manifest>
 			</jar>
 		</target>
+
+	<target name="MAVGCL copy" description="Copy build to MAVGCL" depends="build_mavbase">
+			<copy todir="${deploy.dir}">
+				<fileset dir="${dis.dir}/" />
+			</copy>
+	</target>
 
 </project>
