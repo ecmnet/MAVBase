@@ -38,23 +38,13 @@ import com.comino.mavbase.ublox.parser.UBXMessage;
 import com.comino.mavbase.ublox.parser.UBXMessageType;
 import com.comino.mavbase.ublox.parser.UBXMsgConfiguration;
 import com.comino.mavbase.ublox.util.InputStreamCounter;
+import com.comino.mavbase.ublox.util.UnsignedOperation;
 
-/**
- * <p>
- *
- * </p>
- *
- * @author Lorenzo Patocchi cryms.com, Eugenio Realini
- */
+
 
 public class UBXSerialReader implements Runnable {
 
-	private final static int STATE_NONE = -1;
-	private final static int STATE_NMEA =  0;
-	private final static int STATE_UBX  =  1;
-	private final static int STATE_RCTM =  2;
 
-	private int state =STATE_NONE;
 
 	private InputStreamCounter in;
 	private OutputStream out;
@@ -64,7 +54,6 @@ public class UBXSerialReader implements Runnable {
 
 	private String COMPort;
 	private int measRate = 1;
-	private boolean sysTimeLogEnabled = false;
 	private List<String> requestedNmeaMsgs = null;
 	private String dateFile;
 	private String outputDir = null;
@@ -117,8 +106,7 @@ public class UBXSerialReader implements Runnable {
 		out.write(ratecfg.getByte());
 		out.flush();
 
-		int nmeaAll[] = { UBXMessageType.NMEA_GGA, UBXMessageType.NMEA_GLL, UBXMessageType.NMEA_GSA, UBXMessageType.NMEA_GSV, UBXMessageType.NMEA_RMC, UBXMessageType.NMEA_VTG, UBXMessageType.NMEA_GRS,
-				UBXMessageType.NMEA_GST, UBXMessageType.NMEA_ZDA, UBXMessageType.NMEA_GBS, UBXMessageType.NMEA_DTM };
+		int nmeaAll[] = { UBXMessageType.NMEA_GGA };
 		for (int i = 0; i < nmeaAll.length; i++) {
 			UBXMsgConfiguration msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_NMEA, nmeaAll[i], false);
 			out.write(msgcfg.getByte());
@@ -145,23 +133,6 @@ public class UBXSerialReader implements Runnable {
 		} catch (NullPointerException e) {
 		}
 
-		int pubx[] = { UBXMessageType.PUBX_A, UBXMessageType.PUBX_B, UBXMessageType.PUBX_C, UBXMessageType.PUBX_D };
-		for (int i = 0; i < pubx.length; i++) {
-			UBXMsgConfiguration msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_PUBX, pubx[i], false);
-			out.write(msgcfg.getByte());
-			out.flush();
-		}
-
-		//		System.out.println(date1+" - "+COMPort+" - RXM-RAW messages enabled");
-		//		UBXMsgConfiguration msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_RXM, UBXMessageType.RXM_RAW, true);
-		//		out.write(msgcfg.getByte());
-		//		out.flush();
-
-		System.out.println(date1+" - "+COMPort+" - R messages enabled");
-		UBXMsgConfiguration msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_RXM, UBXMessageType.RXM_RAW, true);
-		out.write(msgcfg.getByte());
-		out.flush();
-
 		if (this.debugModeEnabled) {
 			System.out.println(date1+" - "+COMPort+" - !!! DEBUG MODE !!!");
 		}
@@ -179,24 +150,10 @@ public class UBXSerialReader implements Runnable {
 	public void run() {
 
 		int data = 0;
-		UBXMsgConfiguration msgcfg = null;
 
 		NMEAMessage nmea = new NMEAMessage();
 
-		byte[] buffer = new byte[500];
-
-		Date date = new Date();
-		SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-		String date1 = sdf1.format(date);
-		String COMPortStr = prepareCOMStringForFilename(COMPort);
-
-		int cmsg[] = {};
-		//			if (msgAidHuiRate > 0) {
-		//				System.out.println(date1+" - "+COMPort+" - AID-HUI message polling enabled (rate: "+msgAidHuiRate+"s)");
-		//				msgcfg = new UBXMsgConfiguration(UBXMessageType.CLASS_AID, UBXMessageType.AID_HUI, msg);
-		//				out.write(msgcfg.getByte());
-		//				out.flush();
-		//			}
+		byte[] buffer = new byte[1024];
 
 		in.start();
 
@@ -204,42 +161,48 @@ public class UBXSerialReader implements Runnable {
 		while (!stop) {
 			try {
 				if(in.available()>0){
-					data = in.read();
+					data = in.read() & 0x00FF;
 					if(data == UBXMessage.HEAD1){
-						data = in.read();
+						data = in.read() & 0x00FF;
 						if(data == UBXMessage.HEAD2){
-							System.out.print("UBX: ");
-							in.read(buffer, 0, 2);
-							int clasid = buffer[0] | buffer[1] << 8;
-							int len = (in.read() ) | (in.read() << 8);
-
-//							System.out.println(len+":"+byteToHex(buffer,2));
-							in.read(buffer, 0, len+2);
-
+							in.read(buffer, 0, 4);
+							int len = (int)(buffer[2] & 0x00FF) | ((buffer[3] & 0x00FF) << 8);
+							switch(buffer[0]) {
+							case UBXMessage.CLASS_NAV:
+								switch(buffer[1]) {
+								case UBXMessage.UBX_SVIN:
+									in.read(buffer, 0, len+2);
+						//			System.out.println(byteToHex(buffer,len));
+									int svin_time = readInt(buffer,8);
+									boolean valid =  (buffer[36] & 0x01) == 0x01;
+									boolean active = (buffer[37] & 0x01) == 0x01;
+									float   meanacc  = readInt(buffer,28) / 1000f;
+									for(StreamEventListener sel:streamEventListeners)
+										sel.getSurveyIn(svin_time, active, valid, meanacc);
+									break;
+								default:
+									in.read(buffer, 0, len+2);
+								}
+								break;
+								default:
+									in.read(buffer, 0, len+2);
+							}
 						}
 					}  else if(data == RTCMMessage.RTCM3_PREAMBLE) {
 						buffer[0] = (byte)(data &0x00FF);
 						buffer[1] = (byte)(in.read() & 0x00FF);
 						buffer[2] = (byte)(in.read() & 0x00FF);
-						int len = ((int)(buffer[1] & 0x0003) << 8) | (buffer[2]);
-						if(len>300 || len == 0) {
-							for(int i=0;i<len;i++)
-								in.read();
-							continue;
-						}
-
-//						System.out.println("RTCM3: "+len);
-						in.read(buffer, 3, len);
+						int len = ((int)(buffer[1] & 0x0003) << 8) | (buffer[2] & 0x00FF);
+						in.read(buffer, 3, len+3);
 
 						for(StreamEventListener sel:streamEventListeners)
-							sel.getRTCM3(buffer, len+3);
+							sel.getRTCM3(buffer, len+6);
 
 					} else if(data == NMEAMessage.HEAD1){
 						if (!requestedNmeaMsgs.isEmpty()) {
 							String sentence = "" + (char) data;
 							data = in.read();
 							if(data == NMEAMessage.HEAD2) {
-								System.out.print("NMEA: ");
 								sentence = sentence + (char) data;
 								data = in.read();
 								sentence = sentence + (char) data;
@@ -274,6 +237,7 @@ public class UBXSerialReader implements Runnable {
 			} catch (Exception e) {
 				// error counter
 				e.printStackTrace();
+				stop=true;
 			}
 
 		}
@@ -305,10 +269,6 @@ public class UBXSerialReader implements Runnable {
 
 	public void setRate(int measRate) {
 		this.measRate = measRate;
-	}
-
-	public void enableSysTimeLog(Boolean enableTim) {
-		this.sysTimeLogEnabled = enableTim;
 	}
 
 	public void enableNmeaMsg(List<String> nmeaList) {
@@ -345,6 +305,10 @@ public class UBXSerialReader implements Runnable {
 			}
 		}
 	}
+
+	 public final int readInt(byte[] buffer, int offset) throws IOException {
+	        return (buffer[3+offset]) << 24 | (buffer[2+offset] & 0xff) << 16 | (buffer[1+offset] & 0xff) << 8 | (buffer[0+offset] & 0xff);
+	    }
 
 
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();

@@ -123,6 +123,7 @@ public class UnsignedOperation {
 			n <<= 8;
 			n ^= bytes[i] & 0xFF;
 		}
+
 		return n;
 	}
 

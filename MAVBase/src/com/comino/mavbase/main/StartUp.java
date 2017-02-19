@@ -10,6 +10,9 @@ import com.comino.mav.control.IMAVController;
 import com.comino.mav.control.impl.MAVUdpController;
 import com.comino.mavbase.ublox.reader.StreamEventListener;
 import com.comino.mavbase.ublox.reader.UBXSerialConnection;
+import com.comino.mavbase.ublox.reader.UBXSerialReader;
+import com.comino.msp.model.DataModel;
+import com.comino.msp.model.segment.GPS;
 
 public class StartUp {
 
@@ -20,10 +23,16 @@ public class StartUp {
 	public StartUp() {
 		System.out.println("MAVBase initializing");
 
-		control = new MAVUdpController("172.168.1.1",14555,14550, false);
+		control = new MAVUdpController("172.168.178.1",14555,14550, false);
+//		control.connect();
 
-		if(!control.isConnected())
-			control.connect();
+//		while(!control.isConnected()) {
+//			try {
+//				Thread.sleep(1000);
+//			} catch (InterruptedException e) {
+//
+//			}
+//		}
 
 		Vector<String> ports = UBXSerialConnection.getPortList(true);
 
@@ -34,6 +43,12 @@ public class StartUp {
 		}
 
 		UBXSerialConnection ubx = new UBXSerialConnection(ports.firstElement(), 9600);
+		try {
+			ubx.init();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
 		ubx.addStreamEventListener( new StreamEventListener() {
 
@@ -51,35 +66,44 @@ public class StartUp {
 			@Override
 			public void getRTCM3(byte[] buffer, int len) {
 
-				System.out.println("Sending RTCM3: "+len);
+	//			System.out.println(len+" "+UBXSerialReader.byteToHex(buffer, len));
 
-				msg_gps_rtcm_data msg = new msg_gps_rtcm_data(2,1);
-				if(len < msg.data.length) {
-					msg.flags = 0;
-					msg.len   = len;
-					for(int i = 0;i<len;i++)
-						msg.data[i] = buffer[i];
-					control.sendMAVLinkMessage(msg);
-				} else {
-					int start = 0;
-					while (start < len) {
-						int length = Math.min(len - start, msg.data.length);
-						msg.flags = 1;
-						msg.len   = length;
-						for(int i = start;i<length;i++)
-							msg.data[i] = buffer[i];
-						control.sendMAVLinkMessage(msg);
-						start += length;
-					}
-				}
+//				msg_gps_rtcm_data msg = new msg_gps_rtcm_data(2,1);
+//				if(len < msg.data.length) {
+//					msg.flags = 0;
+//					msg.len   = len;
+//					for(int i = 0;i<len;i++)
+//						msg.data[i] = buffer[i];
+//					control.sendMAVLinkMessage(msg);
+//				} else {
+//					int start = 0;
+//					while (start < len) {
+//						int length = Math.min(len - start, msg.data.length);
+//						msg.flags = 1;
+//						msg.len   = length;
+//						for(int i = start;i<length;i++)
+//							msg.data[i] = buffer[i];
+//						control.sendMAVLinkMessage(msg);
+//						start += length;
+//					}
+//				}
+
+			}
+
+			@Override
+			public void getSurveyIn(float time_svin, boolean is_svin, boolean is_valid, float mean_acc) {
+				System.out.println("Time:"+time_svin+" SVIN:"+is_svin+" Active:"+is_valid+" Accuracy: "+mean_acc);
 
 			}
 
 		});
 
+		DataModel model = control.getCurrentModel();
+
 		while(true) {
 			try {
 				Thread.sleep(1000);
+			//	System.out.println("RTK: "+model.gps.isFlagSet(GPS.GPS_SAT_RTK)+" Sats: "+model.gps.numsat);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

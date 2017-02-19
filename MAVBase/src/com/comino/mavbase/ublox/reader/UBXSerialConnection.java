@@ -48,7 +48,7 @@ public class UBXSerialConnection  {
 
 	private String portName;
 	private int speed;
-	private int setMeasurementRate = 1;
+	private int setMeasurementRate = 5;
 	private boolean enableTimetag = true;
 	private Boolean enableDebug = false;
 	private List<String> enableNmeaList;
@@ -59,11 +59,6 @@ public class UBXSerialConnection  {
 		this.speed = speed;
 		enableNmeaList = new ArrayList<String>();
 		enableNmeaList.add("GGA");
-		try {
-			init();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -113,7 +108,6 @@ public class UBXSerialConnection  {
 
 			ubxReader = new UBXSerialReader(inputStream,outputStream,portName,outputDir);
 			ubxReader.setRate(this.setMeasurementRate);
-			ubxReader.enableSysTimeLog(this.enableTimetag);
 			ubxReader.enableDebugMode(this.enableDebug);
 			ubxReader.enableNmeaMsg(this.enableNmeaList);
 			ubxReader.start();
