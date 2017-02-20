@@ -94,7 +94,7 @@ public class UBXSerialConnection  {
 	 * @see org.gogpsproject.StreamResource#init()
 	 */
 
-	public void init() throws Exception {
+	public void init(int time, float accuracy) throws Exception {
 
 		serialPort = new SerialPort(portName);
 
@@ -110,7 +110,7 @@ public class UBXSerialConnection  {
 			outputStream = new SerialOutputStream(serialPort);
 
 
-			conf.UBXStartSurveyIn(60, 2.0f);
+			conf.UBXStartSurveyIn(time, accuracy);
 			outputStream.write(conf.getByte());
 			outputStream.flush();
 

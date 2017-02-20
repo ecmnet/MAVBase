@@ -44,7 +44,7 @@ public class StartUp {
 
 		UBXSerialConnection ubx = new UBXSerialConnection(ports.firstElement(), 9600);
 		try {
-			ubx.init();
+			ubx.init(60,10f);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
