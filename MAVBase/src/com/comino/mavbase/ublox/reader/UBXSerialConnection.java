@@ -32,6 +32,7 @@ import java.util.Vector;
 
 import com.comino.mav.comm.serial.stream.SerialInputStream;
 import com.comino.mav.comm.serial.stream.SerialOutputStream;
+import com.comino.mavbase.ublox.config.UBXConfiguration;
 
 import jssc.SerialPort;
 import jssc.SerialPortException;
@@ -53,6 +54,8 @@ public class UBXSerialConnection  {
 	private Boolean enableDebug = false;
 	private List<String> enableNmeaList;
 	private String outputDir = null;
+
+	private UBXConfiguration conf = new UBXConfiguration();
 
 	public UBXSerialConnection(String portName, int speed) {
 		this.portName = portName;
@@ -105,6 +108,11 @@ public class UBXSerialConnection  {
 
 			inputStream = new SerialInputStream(serialPort);
 			outputStream = new SerialOutputStream(serialPort);
+
+
+			conf.UBXStartSurveyIn(60, 2.0f);
+			outputStream.write(conf.getByte());
+			outputStream.flush();
 
 			ubxReader = new UBXSerialReader(inputStream,outputStream,portName,outputDir);
 			ubxReader.setRate(this.setMeasurementRate);

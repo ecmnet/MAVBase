@@ -176,7 +176,7 @@ public class UBXSerialReader implements Runnable {
 									int svin_time = readInt(buffer,8);
 									boolean valid =  (buffer[36] & 0x01) == 0x01;
 									boolean active = (buffer[37] & 0x01) == 0x01;
-									float   meanacc  = readInt(buffer,28) / 1000f;
+									float   meanacc  = readInt(buffer, 28) / 10000f;
 									for(StreamEventListener sel:streamEventListeners)
 										sel.getSurveyIn(svin_time, active, valid, meanacc);
 									break;
