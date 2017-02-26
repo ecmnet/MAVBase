@@ -235,8 +235,6 @@ public class UBXSerialReader implements Runnable {
 					} catch (InterruptedException e) {}
 				}
 			} catch (Exception e) {
-				// error counter
-				e.printStackTrace();
 				stop=true;
 			}
 

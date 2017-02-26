@@ -186,8 +186,6 @@ public class UBXSerialConnection  {
 		}
 	}
 
-
-
 	public void enableDebug(Boolean enableDebug) {
 		if(ubxReader!=null){
 			ubxReader.enableDebugMode(enableDebug);
