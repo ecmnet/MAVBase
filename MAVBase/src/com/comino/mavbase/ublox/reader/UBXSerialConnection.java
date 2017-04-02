@@ -72,13 +72,15 @@ public class UBXSerialConnection  {
 		if(list.length>0) {
 			for(int i=0;i<list.length;i++)
 				if(list[i].contains("usb"))
-				    portVect.add(list[i]);
+					portVect.add(list[i]);
 		}
 
 		if (showList) {
-			System.out.println("Found the following ports:");
-			for (int i = 0; i < portVect.size(); i++) {
-				System.out.println(portVect.elementAt(i));
+			if(portVect.size()>0) {
+				System.out.println("Found the following ports:");
+				for (int i = 0; i < portVect.size(); i++) {
+					System.out.println(portVect.elementAt(i));
+				}
 			}
 		}
 
