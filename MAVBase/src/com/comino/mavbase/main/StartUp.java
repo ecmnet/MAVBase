@@ -46,7 +46,6 @@ public class StartUp {
 		try {
 			ubx.init(60,10f);
 		} catch (Exception e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -105,7 +104,6 @@ public class StartUp {
 				Thread.sleep(1000);
 			//	System.out.println("RTK: "+model.gps.isFlagSet(GPS.GPS_SAT_RTK)+" Sats: "+model.gps.numsat);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
