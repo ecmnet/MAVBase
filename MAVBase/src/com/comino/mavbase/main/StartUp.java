@@ -1,18 +1,13 @@
 package com.comino.mavbase.main;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Vector;
-
-import org.mavlink.messages.lquac.msg_gps_rtcm_data;
 
 import com.comino.mav.control.IMAVController;
 import com.comino.mav.control.impl.MAVUdpController;
 import com.comino.mavbase.ublox.reader.StreamEventListener;
 import com.comino.mavbase.ublox.reader.UBXSerialConnection;
-import com.comino.mavbase.ublox.reader.UBXSerialReader;
 import com.comino.msp.model.DataModel;
-import com.comino.msp.model.segment.GPS;
+import com.fazecast.jSerialComm.SerialPort;
 
 public class StartUp {
 
@@ -34,7 +29,7 @@ public class StartUp {
 //			}
 //		}
 
-		Vector<String> ports = UBXSerialConnection.getPortList(true);
+		Vector<SerialPort> ports = UBXSerialConnection.getPortList(true);
 
 		if(ports.size()==0) {
 			control.close();

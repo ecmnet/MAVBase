@@ -21,22 +21,16 @@
 package com.comino.mavbase.ublox.reader;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
-import com.comino.mav.comm.serial.stream.SerialInputStream;
-import com.comino.mav.comm.serial.stream.SerialOutputStream;
 import com.comino.mavbase.ublox.config.UBXConfiguration;
+import com.fazecast.jSerialComm.SerialPort;
 
-import jssc.SerialPort;
-import jssc.SerialPortException;
-import jssc.SerialPortList;
 
 public class UBXSerialConnection  {
 	private InputStream inputStream;
@@ -47,7 +41,6 @@ public class UBXSerialConnection  {
 
 	private UBXSerialReader ubxReader;
 
-	private String portName;
 	private int speed;
 	private int setMeasurementRate = 5;
 	private boolean enableTimetag = true;
@@ -57,21 +50,28 @@ public class UBXSerialConnection  {
 
 	private UBXConfiguration conf = new UBXConfiguration();
 
-	public UBXSerialConnection(String portName, int speed) {
-		this.portName = portName;
+	public UBXSerialConnection(SerialPort port, int speed) {
+		this.serialPort = port;
+		this.speed = speed;
+		enableNmeaList = new ArrayList<String>();
+		enableNmeaList.add("GGA");
+	}
+
+	public UBXSerialConnection(int speed) {
+		this.serialPort = getPortList(false).firstElement();
 		this.speed = speed;
 		enableNmeaList = new ArrayList<String>();
 		enableNmeaList.add("GGA");
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Vector<String> getPortList(boolean showList) {
+	public static Vector<SerialPort> getPortList(boolean showList) {
 
-		String[] list = SerialPortList.getPortNames();
-		Vector<String> portVect = new Vector<String>();
+		SerialPort[] list = SerialPort.getCommPorts();
+		Vector<SerialPort> portVect = new Vector<SerialPort>();
 		if(list.length>0) {
 			for(int i=0;i<list.length;i++)
-				if(list[i].contains("usb"))
+				if(list[i].getSystemPortName().contains("usb"))
 					portVect.add(list[i]);
 		}
 
@@ -98,32 +98,30 @@ public class UBXSerialConnection  {
 
 	public void init(int time, float accuracy) throws Exception {
 
-		serialPort = new SerialPort(portName);
 
-		if (serialPort.isOpened()) {
+		if (serialPort.isOpen()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
 			serialPort.openPort();
-			serialPort.setParams(speed, SerialPort.DATABITS_8,
-					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+			serialPort.setComPortParameters(speed, 8,SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
 
 
-			inputStream = new SerialInputStream(serialPort);
-			outputStream = new SerialOutputStream(serialPort);
+			inputStream = serialPort.getInputStream();
+			outputStream = serialPort.getOutputStream();
 
 
 			conf.UBXStartSurveyIn(time, accuracy);
 			outputStream.write(conf.getByte());
 			outputStream.flush();
 
-			ubxReader = new UBXSerialReader(inputStream,outputStream,portName,outputDir);
+			ubxReader = new UBXSerialReader(inputStream,outputStream,serialPort.getSystemPortName(),outputDir);
 			ubxReader.setRate(this.setMeasurementRate);
 			ubxReader.enableDebugMode(this.enableDebug);
 			ubxReader.enableNmeaMsg(this.enableNmeaList);
 			ubxReader.start();
 
 			connected = true;
-			System.out.println("Connection on " + portName + " established");
+			System.out.println("Connection on " + serialPort.getSystemPortName() + " established");
 		}
 	}
 
@@ -147,7 +145,7 @@ public class UBXSerialConnection  {
 		try {
 			outputStream.close();
 			serialPort.closePort();
-		} catch (IOException | SerialPortException e) {
+		} catch (IOException  e) {
 			e.printStackTrace();
 		}
 
