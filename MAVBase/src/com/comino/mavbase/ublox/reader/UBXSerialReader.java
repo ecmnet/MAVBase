@@ -149,7 +149,7 @@ public class UBXSerialReader implements Runnable {
 	}
 	public void run() {
 
-		int data = 0;
+		int data = 0; long tms = System.currentTimeMillis();
 
 		NMEAMessage nmea = new NMEAMessage();
 
@@ -160,7 +160,10 @@ public class UBXSerialReader implements Runnable {
 
 		while (!stop) {
 			try {
+				if((System.currentTimeMillis()-tms)>10000)
+                    stop = true;
 				if(in.available()>0){
+					tms = System.currentTimeMillis();
 					data = in.read() & 0x00FF;
 					if(data == UBXMessage.HEAD1){
 						data = in.read() & 0x00FF;

@@ -58,7 +58,7 @@ public class UBXSerialConnection  {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Vector<SerialPort> getPortList(boolean showList) {
+	private static Vector<SerialPort> getPortList(boolean showList) {
 
 		SerialPort[] list = SerialPort.getCommPorts();
 		Vector<SerialPort> portVect = new Vector<SerialPort>();
@@ -98,6 +98,7 @@ public class UBXSerialConnection  {
 		} else {
 			serialPort.openPort();
 			serialPort.setComPortParameters(speed, 8,SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+			serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 5000, 5000);
 
 
 			inputStream = serialPort.getInputStream();
@@ -108,14 +109,14 @@ public class UBXSerialConnection  {
 			outputStream.write(conf.getByte());
 			outputStream.flush();
 
-			ubxReader = new UBXSerialReader(inputStream,outputStream,serialPort.getSystemPortName(),outputDir);
+			ubxReader = new UBXSerialReader(inputStream,outputStream,serialPort.getDescriptivePortName(),outputDir);
 			ubxReader.setRate(this.setMeasurementRate);
 			ubxReader.enableDebugMode(this.enableDebug);
 			ubxReader.enableNmeaMsg(this.enableNmeaList);
 			ubxReader.start();
 
 			connected = true;
-			System.out.println("Connection on " + serialPort.getSystemPortName() + " established");
+			System.out.println("Connection to " + serialPort.getDescriptivePortName() + " established");
 		}
 	}
 
@@ -145,7 +146,7 @@ public class UBXSerialConnection  {
 
 
 		connected = false;
-		System.out.println("Connection disconnected");
+		System.out.println(serialPort.getDescriptivePortName()+" disconnected");
 
 	}
 
