@@ -29,15 +29,9 @@ public class StartUp {
 //			}
 //		}
 
-		Vector<SerialPort> ports = UBXSerialConnection.getPortList(true);
 
-		if(ports.size()==0) {
-			control.close();
-			System.out.println("No port found");
-			return;
-		}
 
-		UBXSerialConnection ubx = new UBXSerialConnection(ports.firstElement(), 9600);
+		UBXSerialConnection ubx = new UBXSerialConnection(9600);
 		try {
 			ubx.init(60,10f);
 		} catch (Exception e1) {

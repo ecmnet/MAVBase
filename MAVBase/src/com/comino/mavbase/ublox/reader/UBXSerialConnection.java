@@ -50,15 +50,8 @@ public class UBXSerialConnection  {
 
 	private UBXConfiguration conf = new UBXConfiguration();
 
-	public UBXSerialConnection(SerialPort port, int speed) {
-		this.serialPort = port;
-		this.speed = speed;
-		enableNmeaList = new ArrayList<String>();
-		enableNmeaList.add("GGA");
-	}
 
 	public UBXSerialConnection(int speed) {
-		this.serialPort = getPortList(false).firstElement();
 		this.speed = speed;
 		enableNmeaList = new ArrayList<String>();
 		enableNmeaList.add("GGA");
@@ -98,6 +91,7 @@ public class UBXSerialConnection  {
 
 	public void init(int time, float accuracy) throws Exception {
 
+		this.serialPort = getPortList(false).firstElement();
 
 		if (serialPort.isOpen()) {
 			System.out.println("Error: Port is currently in use");
