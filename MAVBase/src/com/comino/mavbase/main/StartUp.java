@@ -37,7 +37,7 @@ public class StartUp {
 			return;
 		}
 
-		UBXSerialConnection ubx = new UBXSerialConnection(ports.firstElement(), 9600);
+		UBXSerialConnection ubx = new UBXSerialConnection(9600);
 		try {
 			ubx.init(60,10f);
 		} catch (Exception e1) {

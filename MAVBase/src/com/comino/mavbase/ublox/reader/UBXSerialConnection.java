@@ -62,6 +62,7 @@ public class UBXSerialConnection  {
 		this.speed = speed;
 		enableNmeaList = new ArrayList<String>();
 		enableNmeaList.add("GGA");
+		System.out.println(serialPort.getDescriptivePortName()+" found");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -79,7 +80,7 @@ public class UBXSerialConnection  {
 			if(portVect.size()>0) {
 				System.out.println("Found the following ports:");
 				for (int i = 0; i < portVect.size(); i++) {
-					System.out.println(portVect.elementAt(i));
+					System.out.println(portVect.elementAt(i).getSystemPortName());
 				}
 			}
 		}
