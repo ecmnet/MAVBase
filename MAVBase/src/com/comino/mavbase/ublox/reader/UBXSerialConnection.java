@@ -89,12 +89,13 @@ public class UBXSerialConnection  {
 	 * @see org.gogpsproject.StreamResource#init()
 	 */
 
-	public void init(int time, float accuracy) throws Exception {
+	public boolean init(int time, float accuracy) throws Exception {
 
 		this.serialPort = getPortList(false).firstElement();
 
 		if (serialPort.isOpen()) {
 			System.out.println("Error: Port is currently in use");
+			return false;
 		} else {
 			serialPort.openPort();
 			serialPort.setComPortParameters(speed, 8,SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
@@ -117,6 +118,7 @@ public class UBXSerialConnection  {
 
 			connected = true;
 			System.out.println("Connection to " + serialPort.getDescriptivePortName() + " established");
+			return true;
 		}
 	}
 
