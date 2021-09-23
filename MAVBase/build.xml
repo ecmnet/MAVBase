@@ -32,8 +32,8 @@
 					<attribute name="Main-Class" value="com.comino.mavbase.main.StartUp" />
 					<attribute name="Built-By" value="${user.name}" />
 
-					<attribute name="Class-Path" value="jssc.jar
-						                                mavcomm.jar
+					<attribute name="Class-Path" value="jSerialComm-2.6.2.jar
+						                                mavcom-0.0.1.jar
      					                                resources/"
 					/>
 				</manifest>

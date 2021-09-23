@@ -164,7 +164,7 @@ public class NVSFileReader2  {
 						//System.out.println("Wrong Sync char 1 "+data+" "+Integer.toHexString(data)+" ["+((char)data)+"]");
 					}
 				}catch(NVSException nvse){
-					System.err.println(nvse);
+					System.err.println("NVSE "+nvse);
 //					ubxe.printStackTrace();
 				}
 			}

@@ -127,7 +127,7 @@ public class STQFileReader extends EphemerisSystem implements ObservationsProduc
 						//System.out.println("Wrong Sync char 1 "+data+" "+Integer.toHexString(data)+" ["+((char)data)+"]");
 					}
 				}catch(STQException stqe){
-					System.err.println(stqe);
+					System.err.println("STQE "+stqe);
 				}
 			}
 		}catch(IOException e){

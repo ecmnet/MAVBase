@@ -1,13 +1,10 @@
 package com.comino.mavbase.main;
 
-import java.util.Vector;
-
-import com.comino.mav.control.IMAVController;
-import com.comino.mav.control.impl.MAVUdpController;
 import com.comino.mavbase.ublox.reader.StreamEventListener;
 import com.comino.mavbase.ublox.reader.UBXSerialConnection;
-import com.comino.msp.model.DataModel;
-import com.fazecast.jSerialComm.SerialPort;
+import com.comino.mavcom.control.IMAVController;
+import com.comino.mavcom.control.impl.MAVUdpController;
+import com.comino.mavcom.model.DataModel;
 
 public class StartUp {
 
@@ -91,7 +88,7 @@ public class StartUp {
 		while(true) {
 			try {
 				Thread.sleep(1000);
-			//	System.out.println("RTK: "+model.gps.isFlagSet(GPS.GPS_SAT_RTK)+" Sats: "+model.gps.numsat);
+
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

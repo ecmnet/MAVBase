@@ -145,7 +145,7 @@ public class UBXFileReader extends EphemerisSystem implements ObservationsProduc
 						//System.out.println("Wrong Sync char 1 "+data+" "+Integer.toHexString(data)+" ["+((char)data)+"]");
 					}
 				}catch(UBXException ubxe){
-					System.err.println(ubxe);
+					System.err.println("UBXE "+ubxe);
 					//					ubxe.printStackTrace();
 				}
 			}

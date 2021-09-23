@@ -149,7 +149,7 @@ public class NVSFileReader extends EphemerisSystem implements ObservationsProduc
 						}
 					}
 				}catch(NVSException nvse){
-					System.err.println(nvse);
+					System.err.println("NVSE"+nvse);
 				}
 			}
 			
