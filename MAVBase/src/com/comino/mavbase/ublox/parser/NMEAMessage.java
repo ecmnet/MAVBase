@@ -7,12 +7,15 @@ public class NMEAMessage {
 
 	public static final String GGA = "GGA";
 	public static final String GSV = "GSV";
+	public static final String GSA = "GSA";
 
 	public double  latitude;
 	public double  longitude;
 	public double  altitude;
 	public double  geoidHeight;
 	public double  dilution;
+	public float   hdop;
+	public float   vdop;
 	public String  time;
 	public int     sats;
 	public int     fix;
@@ -36,6 +39,16 @@ public class NMEAMessage {
 			this.geoidHeight = this.parseElevation(words[11], words[12]);
 		return true;
 	}
+	
+	public boolean doGSA(String[] words)
+	{
+		// words won't be null, but it could be the wrong length
+		if (words.length < 8)
+			return false;		
+		hdop = parse(words[16]);
+        vdop = parse(words[17]);
+		return true;
+	}
 
 	private double parseLatitude(String angle, String direction)
 	{
@@ -57,6 +70,11 @@ public class NMEAMessage {
 		double degrees = Double.parseDouble(angle.substring(0, 3)) + minutes / 60d;
 
 		return direction.equalsIgnoreCase("W") ? -degrees : degrees;
+	}
+	
+	private float parse(String word)
+	{
+		return Float.parseFloat(word);
 	}
 
 	private double parseElevation(String height, String units)
@@ -85,8 +103,8 @@ public class NMEAMessage {
 
 	public String toString()
 	{
-		return String.format("(%10.8f\u00B0, %11.8f\u00B0, %10.4g m, %10.4g m, %s, %d, %d, %3.2f)", this.latitude, this.longitude,
-				this.altitude, this.geoidHeight, this.time, this.sats, this.fix, this.dilution);
+		return String.format("(%10.8f\u00B0, %11.8f\u00B0, %10.4g m, %10.4g m, %s, %d, %d, %3.2f, %3.2, %3.2)", this.latitude, this.longitude,
+				this.altitude, this.geoidHeight, this.time, this.sats, this.fix, this.dilution, this.hdop, this.vdop);
 	}
 
 }

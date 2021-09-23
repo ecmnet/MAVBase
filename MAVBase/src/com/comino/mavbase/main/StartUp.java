@@ -42,8 +42,8 @@ public class StartUp {
 			}
 
 			@Override
-			public void getPosition(double lat, double lon, double altitude, int fix, int sats) {
-				System.out.println("Base position: Lat: "+lat+" Lon: "+lon+ " Alt: "+altitude+" Sat: "+sats);
+			public void getPosition(double lat, double lon, double altitude, int fix, int sats, float hdop, float vdop) {
+				System.out.println("Base position: Lat: "+lat+" Lon: "+lon+ " Alt: "+altitude+" Sat: "+sats+" HDOP: "+hdop+" VDOP: "+vdop);
 
 			}
 

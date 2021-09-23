@@ -28,7 +28,7 @@ package com.comino.mavbase.ublox.reader;
 public interface StreamEventListener {
 
 	public void streamClosed();
-	public void getPosition(double lat, double lon, double altitude, int fix, int sats);
+	public void getPosition(double lat, double lon, double altitude, int fix, int sats, float hdop, float vdop);
 	public void getRTCM3(byte[] buffer, int len);
 	public void getSurveyIn(float time_svin, boolean is_svin, boolean is_valid, float mean_acc);
 

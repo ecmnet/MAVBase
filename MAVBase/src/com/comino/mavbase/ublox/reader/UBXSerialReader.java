@@ -216,12 +216,16 @@ public class UBXSerialReader implements Runnable {
 								}
 								sentence = sentence + (char) data;
 								String[] words = sentence.split("[,*]");
-
+								
 								if(words[0].contains(NMEAMessage.GGA)) {
 									if(nmea.doGGA(words)) {
 										for(StreamEventListener sel:streamEventListeners)
-											sel.getPosition(nmea.latitude, nmea.longitude, nmea.altitude, nmea.fix, nmea.sats);
+											sel.getPosition(nmea.latitude, nmea.longitude, nmea.altitude, nmea.fix, nmea.sats, nmea.hdop, nmea.vdop);
 									}
+								}
+								
+								if(words[0].contains(NMEAMessage.GSA)) {
+									nmea.doGSA(words);
 								}
 							}
 						}
