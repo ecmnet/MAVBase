@@ -3,3 +3,7 @@
 MAVBase/dist
 MAVBase/bin
 
+/target/
+/dis/
+/bin/
+/tmp/

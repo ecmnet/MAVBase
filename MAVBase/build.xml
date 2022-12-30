@@ -1,10 +1,9 @@
 <project name="MAVBase" basedir=".">
 
-	<property name="lib.dir" value="lib" />
-	<property name="dis.dir" value="dis" />
-	<property name="res.dir" value="resources" />
-	<property name="build.dir" value="bin" />
+	<property name="workspace.dir" value="/Users/ecmnet/PixHawk/java/" />
+	<property name="target.dir" value="target" />
 	<property name="deploy.dir" value="/Users/ecmnet/PixHawk/java/MAVGCL/MAVGCL/lib" />
+	<property name="deploy_up.dir" value="/Volumes/homes" />
 
 	<target name="clean">
 		    <delete dir="dist" />
@@ -13,31 +12,11 @@
 			<mkdir dir="bin" />
 	</target>
 
-	<target name="compile_mavbase" depends="clean">
-	<javac destdir="bin" includeantruntime="false">
-		<src path="src" />
-		<classpath>
-			<fileset dir="lib">
-				<include name="*.jar" />
-			</fileset>
-		</classpath>
-	</javac>
-	</target>
-
-	<target name="build_mavbase"  depends="compile_mavbase">
-			<!--	 <mkdir dir="${dis.dir}"/> -->
-			<jar destfile="${dis.dir}/mavbase.jar" basedir="${build.dir}">
-				<manifest>
-			<!--		<attribute name="Main-Class" value="com.comino.msp.main.StartUp" /> -->
-					<attribute name="Main-Class" value="com.comino.mavbase.main.StartUp" />
-					<attribute name="Built-By" value="${user.name}" />
-
-					<attribute name="Class-Path" value="jSerialComm-2.6.2.jar
-						                                mavcom-0.0.1.jar
-     					                                resources/"
-					/>
-				</manifest>
-			</jar>
+	<target name="build_mavbase" >
+			<exec dir="${workspace.dir}/MAVBase/MAVBase" executable="sh">
+				<env key="JAVA_HOME" path="/Library/Java/JavaVirtualMachines/jdk-10.jdk/Contents/home"/>
+				<arg line="-c '/usr/local/Cellar/maven/3.8.6/bin/mvn clean install -amd'" />
+			</exec>
 		</target>
 
 	<target name="MAVGCL copy" description="Copy build to MAVGCL" depends="build_mavbase">
@@ -45,5 +24,14 @@
 				<fileset dir="${dis.dir}/" />
 			</copy>
 	</target>
+	
+	<target name="up_base" depends="build_mavbase">
+				<!--
+				<copy todir="${deploy.dir}">
+					<fileset dir="${dis.dir}/mavlquac*-dependencies.jar" />
+				</copy>
+				-->
+			    <copy file="${target.dir}/mavbase-0.0.1-jar-with-dependencies.jar" todir="${deploy_up.dir}"/>
+		</target>
 
 </project>
